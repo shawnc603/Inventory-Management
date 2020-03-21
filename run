@@ -1,0 +1,6 @@
+#!/bin/bash
+
+set -e
+
+# Dynamically start a node.js application as the node user
+/sbin/setuser node npm start --prefix /opt/$PKG

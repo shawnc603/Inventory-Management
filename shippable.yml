@@ -1,0 +1,51 @@
+language: node_js
+
+branches:
+  only:
+    - master
+    - dev-api
+
+
+# using pre-defined build variables
+# full list http://docs.shippable.com/ci/advancedOptions/environmentVariables/
+env:
+  global:
+    - TEST_RESULTS_DIR=$SHIPPABLE_REPO_DIR/shippable/testresults
+    - CODE_COVERAGE_DIR=$SHIPPABLE_REPO_DIR/shippable/codecoverage
+    - TESTS_LOC_DIR=$SHIPPABLE_REPO_DIR/tests
+    - MOD_LOC=$SHIPPABLE_REPO_DIR/node_modules/.bin/
+    - PUSH_REGISTRY=repo.tsafe.io:5002
+    - PULL_REGISTRY=repo.tsafe.io:5000
+    - APP_GROUP=service
+    - TAG=$BRANCH.$BUILD_NUMBER
+    - LATEST_TAG=$BRANCH.latest
+    - IMAGE_NAME=inventory-service
+    - COMMIT_SHORT=${COMMIT:0:7}
+    - secure: gl0IPEAvr3G6kmOcjeE1P/pVhdboo12wvAY/6ZN/6rEzSIUz5pdraG51UN23aZ8UNRH/rsQ41BCuEPSiz/OVWRcGHcVkezNNsfHsULsjqgzMB3dE7IdK3R8HnUEw5cWJ3XsW3ChO3Bif0R4zZZFBLzbvOuvU1cn9JRJLvAdJurEP92ERvt31RSUZ755pa5h0HSiedXZPBAKQ7sd9gy2ksZaX1cTwMw1RyHx3rnrn5QKvQh4wlZ0aL9yuw8eotFt9RZDvcpqQG/ZHh2AyIlfinUgUT1g1lBQ7wUcM/gnSG5d6+Phrlon6HXrJ7xmeUjutJl6GXqhh4LPtoNOe+3xiNw==
+
+build:
+  pre_ci_boot:
+    image_name: nrm-p.tsafe.io:5000/baseimages/build/tsafe_ops-base_nodev10
+    image_tag: 3\.0
+    pull: true
+    options: "-e HOME=/root"
+
+  ci:
+    - echo 'CI Running'
+
+  post_ci:
+
+    - if [ "$BRANCH" == "master" ]; then PUSH_REGISTRY=nrm-p.tsafe.io:5002; TAG=$BUILD_NUMBER; LATEST_TAG=latest; fi
+    - echo "$PUSH_REGISTRY" && echo "$TAG"
+    - docker login -u shippable.resource -p $shippable_password $PUSH_REGISTRY
+    - docker build --build-arg PKG=$IMAGE_NAME --no-cache --pull -t $PUSH_REGISTRY/$APP_GROUP/$IMAGE_NAME:$TAG .
+    - docker push $PUSH_REGISTRY/$APP_GROUP/$IMAGE_NAME:$TAG
+    - docker tag $PUSH_REGISTRY/$APP_GROUP/$IMAGE_NAME:$TAG  $PUSH_REGISTRY/$APP_GROUP/$IMAGE_NAME:$LATEST_TAG
+    - docker push $PUSH_REGISTRY/$APP_GROUP/$IMAGE_NAME:$LATEST_TAG
+
+integrations:
+  hub:
+    - integrationName: tablesafe-prod_pull
+      type: "dockerRegistryLogin"
+    - integrationName: tablesafe_push
+      type: "dockerRegistryLogin"

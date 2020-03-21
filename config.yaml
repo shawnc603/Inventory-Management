@@ -1,0 +1,11 @@
+# to apply this configuration, set the environment variable:
+# "CONFIG_FILE" = <path-to-this-file>  example: "./config_dev.yaml"
+# or
+# use the parameter -c <path-to-this-file>
+
+# configuration Core Settings (example)
+
+apiPort: '13002' 
+# waitForServices: 3
+# origin: localhost
+
